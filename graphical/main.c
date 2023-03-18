@@ -3,8 +3,8 @@
 #include <stdbool.h>
 const int BOX_WIDTH = 100;
 const int BOX_HEIGHT = 100;
-const int SCREEN_WIDTH = 520;
-const int SCREEN_HEIGHT = 620;
+const int SCREEN_WIDTH = 530;
+const int SCREEN_HEIGHT = 635;
 
 
 int main(int argc, char** argv){
@@ -35,8 +35,20 @@ int main(int argc, char** argv){
 		SDL_RenderClear(Renderer);
 		
 		SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
-		SDL_RenderFillRect(Renderer, &(SDL_Rect){BOX_WIDTH, BOX_HEIGHT, BOX_WIDTH, BOX_HEIGHT});
+		//SDL_RenderFillRect(Renderer, &(SDL_Rect){10, 10, BOX_WIDTH, BOX_HEIGHT});
 		
+		int x;
+		int y;
+		int xpos = 5;
+		int ypos = 5;
+		for (y = 0; y < 6; y++){
+			for (x = 0; x < 5; x++){
+				SDL_RenderFillRect(Renderer, &(SDL_Rect){xpos, ypos, BOX_WIDTH, BOX_HEIGHT});
+				xpos += BOX_WIDTH + 5;		
+			}
+			ypos += BOX_HEIGHT + 5;
+			xpos = 5;
+		}
 		// Display rendered content
 		
 		SDL_RenderPresent(Renderer);
