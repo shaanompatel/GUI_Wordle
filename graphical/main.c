@@ -15,6 +15,12 @@ char alpha[26] = {'a', 'b', 'c', 'd','e', 'f','g',
 				 'x','y','z'};
 char grid[10][10];
 int color_grid[5][6];
+// 0 is light gray
+// 1 is dark ray
+// 2 is red
+// 3 is yellow
+// 4 is green
+
 
 
 SDL_Color color = {225, 225, 225};
@@ -44,42 +50,38 @@ int main(int argc, char** argv){
 	
 	int row = 0;
 	int col = 0;
+	int key;
 	while(Running) {
 		while(SDL_PollEvent(&Event)) {
 			switch(Event.type) {
 				case SDL_QUIT: { Running = 0; }
 				case SDL_KEYDOWN: { 
-					int key = Event.key.keysym.sym;
+					key = Event.key.keysym.sym;
 					if (key >= 97 && key <= 122){
 						if (col < 5){
 							grid[row][col] = alpha[key-97];
+							color_grid[row][col] = 1;
 							printf("%c\n", grid[row][col]);
 							printGrid();
 							col++;
 						}
-						// add letter to current index of array
-						// draw grid
 					} else if (key == SDLK_RETURN) {
-						printf("Enter Pressed\n");
-						printf("%d\n", col);
-
 						if (col == 5 && row < 5){
-								row++;
-								col = 0;
+							row++;
+							col = 0;
 						}
 					} else if (key == SDLK_BACKSPACE){
 						if (col > 0){
-								col -= 1;
-								grid[row][col] = ' ';
-								printGrid();
-								printf("backspace pressed");
+							col -= 1;
+							grid[row][col] = ' ';
+							color_grid[row][col] = 0;
+							printGrid();
 						}
 					} else if (key == SDLK_ESCAPE){
 						Running = 0;
 					}
 					drawGrid();
 				}
-				
 				break;
 			}
 		}
@@ -103,7 +105,7 @@ void renderText(char* let, int row, int col){
 	SDL_Surface* surface = TTF_RenderText_Solid(font, let, color);
 	SDL_Texture* message = SDL_CreateTextureFromSurface(Renderer, surface);
 	
-	int colCoord = (col*105) + 15;
+	int colCoord = (col*105) + 20;
 	int rowCoord = row*105;
 
 	SDL_QueryTexture(message, NULL, NULL, &texW, &texH);
@@ -124,7 +126,7 @@ void drawGrid(){
 	SDL_SetRenderDrawColor(Renderer, 30, 30, 30, 255);
 	SDL_RenderClear(Renderer);
 	
-	SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
+	//SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
 
 	int r = 0;
 	int c = 0;
@@ -133,6 +135,17 @@ void drawGrid(){
 
 	for (r = 0; r < 6; r++){
 		for (c = 0; c < 5; c++){
+			switch(color_grid[r][c]) {
+				case 0:{
+					SDL_SetRenderDrawColor(Renderer, 100, 100, 100, 255);
+					break;
+				}
+				case 1:{
+					SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
+					break;
+				}
+				break;
+			}
 			SDL_RenderFillRect(Renderer, &(SDL_Rect){xpos, ypos, BOX_WIDTH, BOX_HEIGHT});
 			char temp[2];
 			temp[0] = grid[r][c];
@@ -150,7 +163,7 @@ void initGrids(){
 	int j; 
 	for(i = 0; i < 6; i++){
 		for (j = 0; j < 5; j++){
-			grid[i][j] = '-';
+			grid[i][j] = ' ';
 			color_grid[i][j] = 0;
 		}
 	}
