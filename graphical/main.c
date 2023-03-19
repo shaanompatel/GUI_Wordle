@@ -2,6 +2,12 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
+#include <string.h>
+#define MAX_LINES 12971
+#define MAX_LEN 7
+
 const int BOX_WIDTH = 100;
 const int BOX_HEIGHT = 100;
 const int SCREEN_WIDTH = 530;
@@ -15,13 +21,16 @@ char alpha[26] = {'a', 'b', 'c', 'd','e', 'f','g',
 				 'x','y','z'};
 char grid[10][10];
 int color_grid[5][6];
+char valid[MAX_LINES][MAX_LEN];
+char* ANSWER;
+bool won = false;
+
+
 // 0 is light gray
 // 1 is dark ray
 // 2 is red
 // 3 is yellow
 // 4 is green
-
-
 
 SDL_Color color = {225, 225, 225};
 SDL_Window* window;
@@ -32,13 +41,23 @@ void renderText(char* let, int r, int c);
 void drawGrid();
 void initGrids();
 void printGrid();
+char* genAnswer();
+int genRandom();
+bool evaluate_row(int row);
+void color_row(int row);
+bool contains(char *ans, char guess);
+int numAppearance(char a, char *ans);
+
 
 int main(int argc, char** argv){
+    ANSWER = genAnswer();
+	printf("%s\n", ANSWER);
+	
 	initGrids();
 	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();	
 
-	window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+	window = SDL_CreateWindow( "Wordle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
 	Renderer = SDL_CreateRenderer(window, -1, 0);
 	font = TTF_OpenFont("arial.ttf", 90);
 
@@ -61,21 +80,30 @@ int main(int argc, char** argv){
 						if (col < 5){
 							grid[row][col] = alpha[key-97];
 							color_grid[row][col] = 1;
-							printf("%c\n", grid[row][col]);
-							printGrid();
 							col++;
 						}
 					} else if (key == SDLK_RETURN) {
+						printf("%d\n", row);
 						if (col == 5 && row < 5){
-							row++;
-							col = 0;
+							if (evaluate_row(row)){
+								row++;
+								col = 0;
+							}
+						} else if (row == 5){
+							evaluate_row(row);
+							if (!won){
+								printf("You ran out of guesses");
+							}
 						}
+						if (won){
+							printf("You Won!\n");
+						}
+
 					} else if (key == SDLK_BACKSPACE){
 						if (col > 0){
 							col -= 1;
 							grid[row][col] = ' ';
 							color_grid[row][col] = 0;
-							printGrid();
 						}
 					} else if (key == SDLK_ESCAPE){
 						Running = 0;
@@ -85,9 +113,6 @@ int main(int argc, char** argv){
 				break;
 			}
 		}
-
-		//enter things happening here
-
 		// Display rendered content
 		SDL_RenderPresent(Renderer);
 	}
@@ -126,8 +151,6 @@ void drawGrid(){
 	SDL_SetRenderDrawColor(Renderer, 30, 30, 30, 255);
 	SDL_RenderClear(Renderer);
 	
-	//SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
-
 	int r = 0;
 	int c = 0;
 	int xpos = 5;
@@ -137,11 +160,23 @@ void drawGrid(){
 		for (c = 0; c < 5; c++){
 			switch(color_grid[r][c]) {
 				case 0:{
-					SDL_SetRenderDrawColor(Renderer, 100, 100, 100, 255);
+					SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
 					break;
 				}
 				case 1:{
-					SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
+					SDL_SetRenderDrawColor(Renderer, 100, 100, 100, 255);
+					break;
+				}
+				case 2:{
+					SDL_SetRenderDrawColor(Renderer, 150, 0, 0, 255);
+					break;
+				}
+				case 3:{
+					SDL_SetRenderDrawColor(Renderer, 238, 231, 32, 255);
+					break;
+				}
+				case 4:{
+					SDL_SetRenderDrawColor(Renderer, 0, 150, 0, 255);
 					break;
 				}
 				break;
@@ -168,6 +203,96 @@ void initGrids(){
 		}
 	}
 }
+
+
+char* genAnswer(){
+    FILE *fpointer = fopen("valid.txt", "r");
+    int line = 0;
+    while(line <= MAX_LINES && !feof(fpointer)){
+        if (fgets(valid[line], MAX_LEN, fpointer)!=NULL){
+            valid[line][5] = '\0';
+            line++;
+        }
+    }
+    fclose(fpointer);
+    return(valid[genRandom()]);
+}
+
+int genRandom(){
+    srand(time(NULL)); 
+    int num = (rand() % (MAX_LINES - 0 + 1));
+    return num;
+}
+
+bool evaluate_row(int row){
+	int i;
+	bool correct = false;
+    for(i=0;i<(sizeof valid / sizeof valid[0]);i++){
+		if (strcmp(valid[i], grid[row]) == 0){
+           correct = true;
+        }
+    }
+
+	if (strcmp(ANSWER, grid[row]) == 0){
+		won = true;
+	}
+	
+	if(correct){
+		color_row(row);
+		return true; 
+	} else {
+		return false; 
+	}
+}
+
+void color_row(int row){
+	int index = 0;
+    char checked[6];
+
+    int i;
+    for(i=0;i<5;i++){
+        if (grid[row][i] == ANSWER[i]){
+			color_grid[row][i] = 4;
+            checked[index] = grid[row][i];
+            index++;
+        }
+    }
+   
+    for(i=0;i<5;i++){
+        if (contains(ANSWER, grid[row][i])){
+            if (numAppearance(grid[row][i], ANSWER) > numAppearance(grid[row][i], checked)){
+                if (color_grid[row][i] != 4){
+                    color_grid[row][i] = 3;
+                    checked[index] = grid[row][i];
+                    index++;
+                }
+            }
+        }
+    }
+}
+
+bool contains(char *ans, char guess){
+    int i;
+    for(i=0;i<5;i++){
+        if (ans[i] == guess){
+            return true;
+        }
+    }
+    return false;
+}
+
+int numAppearance(char a, char *ans){
+    int i;
+    int count = 0;
+    for(i=0;i<5;i++){
+        if (ans[i] == a){
+            count++;
+        }
+    }
+    return count;
+}
+
+// debug
 
 void printGrid(){
 	int i;
