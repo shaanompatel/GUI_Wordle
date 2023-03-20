@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 #define MAX_LINES 12971
 #define MAX_LEN 7
 
@@ -47,6 +48,7 @@ bool evaluate_row(int row);
 void color_row(int row);
 bool contains(char *ans, char guess);
 int numAppearance(char a, char *ans);
+void finishGame();
 
 
 int main(int argc, char** argv){
@@ -83,7 +85,6 @@ int main(int argc, char** argv){
 							col++;
 						}
 					} else if (key == SDLK_RETURN) {
-						printf("%d\n", row);
 						if (col == 5 && row < 5){
 							if (evaluate_row(row)){
 								row++;
@@ -92,11 +93,15 @@ int main(int argc, char** argv){
 						} else if (row == 5){
 							evaluate_row(row);
 							if (!won){
-								printf("You ran out of guesses");
+								finishGame();
+								Sleep(10000);
+								Running = 0;
 							}
 						}
 						if (won){
-							printf("You Won!\n");
+							finishGame();
+							Sleep(10000);
+							Running = 0;
 						}
 
 					} else if (key == SDLK_BACKSPACE){
@@ -116,6 +121,7 @@ int main(int argc, char** argv){
 		// Display rendered content
 		SDL_RenderPresent(Renderer);
 	}
+
 	
 	SDL_DestroyWindow(window);
 	TTF_CloseFont(font);
@@ -172,7 +178,7 @@ void drawGrid(){
 					break;
 				}
 				case 3:{
-					SDL_SetRenderDrawColor(Renderer, 238, 231, 32, 255);
+					SDL_SetRenderDrawColor(Renderer, 194, 206, 24, 255);
 					break;
 				}
 				case 4:{
@@ -240,9 +246,8 @@ bool evaluate_row(int row){
 	if(correct){
 		color_row(row);
 		return true; 
-	} else {
-		return false; 
 	}
+	return false; 
 }
 
 void color_row(int row){
@@ -269,6 +274,12 @@ void color_row(int row){
             }
         }
     }
+	
+	for (i=0;i<5;i++){
+		if (color_grid[row][i] != 3 && color_grid[row][i] != 4){
+			color_grid[row][i] = 2;
+		}
+	}
 }
 
 bool contains(char *ans, char guess){
@@ -290,6 +301,31 @@ int numAppearance(char a, char *ans){
         }
     }
     return count;
+}
+
+void finishGame(){
+	SDL_RenderClear(Renderer);					
+	drawGrid();
+	SDL_SetRenderDrawColor(Renderer, 30, 30, 30, 255);
+	SDL_RenderFillRect(Renderer, &(SDL_Rect){65, 165, 400, 300});
+
+	font = TTF_OpenFont("arial.ttf", 20);
+	
+	SDL_Surface* surface = TTF_RenderText_Solid(font, "Congrats, You Won!", color);
+	SDL_Texture* message = SDL_CreateTextureFromSurface(Renderer, surface);
+	
+
+	SDL_QueryTexture(message, NULL, NULL, &texW, &texH);
+	SDL_Rect dstrect = {65, 165, texW, texH };
+	
+	SDL_RenderCopy(Renderer, message, NULL, &dstrect);
+	
+	
+	SDL_FreeSurface(surface);
+	SDL_DestroyTexture(message);
+	SDL_RenderPresent(Renderer);
+
+
 }
 
 // debug
