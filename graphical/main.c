@@ -12,7 +12,7 @@
 const int BOX_WIDTH = 100;
 const int BOX_HEIGHT = 100;
 const int SCREEN_WIDTH = 530;
-const int SCREEN_HEIGHT = 635;
+const int SCREEN_HEIGHT = 850;
 
 int texW = 100;
 int texH = 100;
@@ -20,6 +20,7 @@ char alpha[26] = {'a', 'b', 'c', 'd','e', 'f','g',
 				'h','i', 'j','k', 'l','m', 'n','o',
 				 'p','q', 'r','s', 't','u', 'v','w', 
 				 'x','y','z'};
+int keyboard[26];
 char grid[10][10];
 int color_grid[5][6];
 char valid[MAX_LINES][MAX_LEN];
@@ -48,6 +49,7 @@ bool evaluate_row(int row);
 void color_row(int row);
 bool contains(char *ans, char guess);
 int numAppearance(char a, char *ans);
+void drawKeyboard();
 void finishGame();
 
 
@@ -91,11 +93,12 @@ int main(int argc, char** argv){
 								col = 0;
 							}
 						} else if (row == 5){
-							evaluate_row(row);
-							if (!won){
-								finishGame();
-								Sleep(10000);
-								Running = 0;
+							if (evaluate_row(row)){	
+								if (!won){
+									finishGame();
+									Sleep(10000);
+									Running = 0;
+								}
 							}
 						}
 						if (won){
@@ -197,6 +200,26 @@ void drawGrid(){
 		ypos += BOX_HEIGHT + 5;
 		xpos = 5;
 	}
+}
+
+
+//traverse through the alphabet
+//for each letter in the alphabet, check it is in the grid
+//if it is, note its position and find its color
+//add the color int to the current index 
+//only change the color if the new one that is found is greater than
+//the one that is currently there
+
+void drawKeyboard(){
+	int i;
+	int j;
+	char let;
+	for (i=0;i<6;i++){
+		for (j=0;j<5;j++){
+			//let = grid[i][j];
+				
+		}
+	}	
 }
 
 void initGrids(){
@@ -310,13 +333,25 @@ void finishGame(){
 	SDL_RenderFillRect(Renderer, &(SDL_Rect){65, 165, 400, 300});
 
 	font = TTF_OpenFont("arial.ttf", 20);
+	int xcoord;
+
+	char output[100];
+	if(won){
+		strcpy(output, "Congrats, you guessed correctly!");
+		xcoord = 120;
+	} else {
+		strcpy(output, "You lost. The word was ");
+		strcat(output, ANSWER);
+		strcat(output, ".");
+		xcoord = 135;
+	}
 	
-	SDL_Surface* surface = TTF_RenderText_Solid(font, "Congrats, You Won!", color);
+	SDL_Surface* surface = TTF_RenderText_Solid(font, output, color);
 	SDL_Texture* message = SDL_CreateTextureFromSurface(Renderer, surface);
 	
 
 	SDL_QueryTexture(message, NULL, NULL, &texW, &texH);
-	SDL_Rect dstrect = {65, 165, texW, texH };
+	SDL_Rect dstrect = {xcoord, 200, texW, texH };
 	
 	SDL_RenderCopy(Renderer, message, NULL, &dstrect);
 	
