@@ -8,11 +8,15 @@
 #include <windows.h>
 #define MAX_LINES 12971
 #define MAX_LEN 7
+#define MAX_LINES_ANS 2309
+
 
 const int BOX_WIDTH = 100;
 const int BOX_HEIGHT = 100;
-const int SCREEN_WIDTH = 530;
-const int SCREEN_HEIGHT = 850;
+const int KEY_HEIGHT = 50;
+const int KEY_WIDTH = 32;
+const int SCREEN_WIDTH = 535;
+const int SCREEN_HEIGHT = 780;
 
 int texW = 100;
 int texH = 100;
@@ -24,6 +28,7 @@ int keyboard[26];
 char grid[10][10];
 int color_grid[5][6];
 char valid[MAX_LINES][MAX_LEN];
+char answers[MAX_LINES_ANS][MAX_LEN];
 char* ANSWER;
 bool won = false;
 
@@ -47,6 +52,7 @@ char* genAnswer();
 int genRandom();
 bool evaluate_row(int row);
 void color_row(int row);
+int find(char a);
 bool contains(char *ans, char guess);
 int numAppearance(char a, char *ans);
 void drawKeyboard();
@@ -67,6 +73,7 @@ int main(int argc, char** argv){
 
 
 	drawGrid();
+	drawKeyboard();
 	
 	int Running = 1;
 	SDL_Event Event = {0};
@@ -91,6 +98,7 @@ int main(int argc, char** argv){
 							if (evaluate_row(row)){
 								row++;
 								col = 0;
+								drawKeyboard();
 							}
 						} else if (row == 5){
 							if (evaluate_row(row)){	
@@ -117,6 +125,7 @@ int main(int argc, char** argv){
 						Running = 0;
 					}
 					drawGrid();
+					drawKeyboard();
 				}
 				break;
 			}
@@ -153,6 +162,7 @@ void renderText(char* let, int row, int col){
 
 }
 
+
 //call render text for each char in array of strings
 //call render grid each time enter is pressed, going 
 
@@ -162,7 +172,7 @@ void drawGrid(){
 	
 	int r = 0;
 	int c = 0;
-	int xpos = 5;
+	int xpos = 9;
 	int ypos = 5;
 
 	for (r = 0; r < 6; r++){
@@ -198,7 +208,7 @@ void drawGrid(){
 			xpos += BOX_WIDTH + 5;		
 		}
 		ypos += BOX_HEIGHT + 5;
-		xpos = 5;
+		xpos = 9;
 	}
 }
 
@@ -211,15 +221,64 @@ void drawGrid(){
 //the one that is currently there
 
 void drawKeyboard(){
-	int i;
+	int i = 0;
 	int j;
+	int z;
 	char let;
-	for (i=0;i<6;i++){
-		for (j=0;j<5;j++){
-			//let = grid[i][j];
-				
+	int xpos = 27;
+	int ypos = 650;
+	font = TTF_OpenFont("arial.ttf", 20);
+	char temp[2];
+	
+	SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
+	//SDL_RenderClear(Renderer);
+
+	for (z = 0; z < 2; z++){
+		for (j = 0; j < 13; j++){
+			let = alpha[i];
+			temp[0] = let;
+			
+			switch(keyboard[i]) {
+				case 0:{
+					SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
+					break;
+				}
+				case 1:{
+					SDL_SetRenderDrawColor(Renderer, 100, 100, 100, 255);
+					break;
+				}
+				case 2:{
+					SDL_SetRenderDrawColor(Renderer, 150, 0, 0, 255);
+					break;
+				}
+				case 3:{
+					SDL_SetRenderDrawColor(Renderer, 194, 206, 24, 255);
+					break;
+				}
+				case 4:{
+					SDL_SetRenderDrawColor(Renderer, 0, 150, 0, 255);
+					break;
+				}
+				break;
+			}
+			
+			
+			temp[1] = '\0';
+			SDL_Surface* surface = TTF_RenderText_Solid(font, temp, color);
+			SDL_Texture* message = SDL_CreateTextureFromSurface(Renderer, surface);
+			SDL_RenderFillRect(Renderer, &(SDL_Rect){xpos, ypos, KEY_WIDTH, KEY_HEIGHT});
+			SDL_QueryTexture(message, NULL, NULL, &texW, &texH);
+			SDL_Rect dstrect = { xpos+10, ypos+20, texW, texH };
+			SDL_RenderCopy(Renderer, message, NULL, &dstrect);
+			SDL_FreeSurface(surface);
+			SDL_DestroyTexture(message);
+			xpos += KEY_WIDTH + 5;
+			i++;
 		}
-	}	
+		ypos += 55;
+		xpos = 27;
+	}
+	
 }
 
 void initGrids(){
@@ -244,12 +303,23 @@ char* genAnswer(){
         }
     }
     fclose(fpointer);
-    return(valid[genRandom()]);
+
+	FILE *fpointerAns = fopen("answer.txt", "r");
+    line = 0;
+    while(line <= MAX_LINES_ANS && !feof(fpointerAns)){
+        if (fgets(answers[line], MAX_LEN, fpointerAns)!=NULL){
+            answers[line][5] = '\0';
+            line++;
+        }
+    }
+    fclose(fpointerAns);
+    return(answers[genRandom()]);
 }
 
 int genRandom(){
     srand(time(NULL)); 
-    int num = (rand() % (MAX_LINES - 0 + 1));
+    int num = (rand() % (MAX_LINES_ANS - 0 + 1));
+	printf("%d\n", num);
     return num;
 }
 
@@ -282,6 +352,7 @@ void color_row(int row){
         if (grid[row][i] == ANSWER[i]){
 			color_grid[row][i] = 4;
             checked[index] = grid[row][i];
+			keyboard[find(grid[row][i])] = 4;
             index++;
         }
     }
@@ -292,6 +363,7 @@ void color_row(int row){
                 if (color_grid[row][i] != 4){
                     color_grid[row][i] = 3;
                     checked[index] = grid[row][i];
+					keyboard[find(grid[row][i])] = 3;
                     index++;
                 }
             }
@@ -301,8 +373,20 @@ void color_row(int row){
 	for (i=0;i<5;i++){
 		if (color_grid[row][i] != 3 && color_grid[row][i] != 4){
 			color_grid[row][i] = 2;
+			keyboard[find(grid[row][i])] = 2;
+
 		}
 	}
+}
+
+int find(char a){
+	int i;
+	for (i=0;i< (sizeof alpha / sizeof alpha[0]);i++){
+		if (a == alpha[i]){
+			return i;
+		}
+	}
+	return -1;
 }
 
 bool contains(char *ans, char guess){
@@ -329,6 +413,7 @@ int numAppearance(char a, char *ans){
 void finishGame(){
 	SDL_RenderClear(Renderer);					
 	drawGrid();
+	drawKeyboard();
 	SDL_SetRenderDrawColor(Renderer, 30, 30, 30, 255);
 	SDL_RenderFillRect(Renderer, &(SDL_Rect){65, 165, 400, 300});
 
