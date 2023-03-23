@@ -61,7 +61,7 @@ void finishGame();
 
 int main(int argc, char** argv){
     ANSWER = genAnswer();
-	printf("%s\n", ANSWER);
+	//printf("%s\n", ANSWER);
 	
 	initGrids();
 	SDL_Init(SDL_INIT_VIDEO);
@@ -104,14 +104,14 @@ int main(int argc, char** argv){
 							if (evaluate_row(row)){	
 								if (!won){
 									finishGame();
-									Sleep(10000);
+									Sleep(2000);
 									Running = 0;
 								}
 							}
 						}
 						if (won){
 							finishGame();
-							Sleep(10000);
+							Sleep(2000);
 							Running = 0;
 						}
 
@@ -231,7 +231,6 @@ void drawKeyboard(){
 	char temp[2];
 	
 	SDL_SetRenderDrawColor(Renderer, 50, 50, 50, 255);
-	//SDL_RenderClear(Renderer);
 
 	for (z = 0; z < 2; z++){
 		for (j = 0; j < 13; j++){
@@ -319,7 +318,6 @@ char* genAnswer(){
 int genRandom(){
     srand(time(NULL)); 
     int num = (rand() % (MAX_LINES_ANS - 0 + 1));
-	printf("%d\n", num);
     return num;
 }
 
